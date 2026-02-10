@@ -6,8 +6,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "db:prepare": "wrangler d1 execute db --local --file d1/schema.sql",
-    "dev": "wrangler pages dev .",
-    "deploy": "wrangler pages deploy ."
+    "dev": "wrangler pages dev ."
   },
   "description": "",
   "main": "index.js",
