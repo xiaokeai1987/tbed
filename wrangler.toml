@@ -2,18 +2,6 @@ name = "shared-image-site"
 compatibility_date = "2025-12-01"
 pages_build_output_dir = "."
 
-[[kv_namespaces]]
-binding = "kv"
-id = "dev-kv"
-preview_id = "dev-kv-preview"
-
-[[d1_databases]]
-binding = "db"
-database_name = "db"
-database_id = "dev-db-id"
-preview_database_id = "dev-db-preview-id"
-
-[vars]
-# 可在本地 .env 或部署面板中覆盖
-TGBOT = ""
-TGGROUP = ""
+## 说明：
+## Pages 正式环境的 KV/D1 绑定请在仪表盘中配置（Functions → Bindings）
+## 本地开发请使用 `wrangler pages dev .` 的模拟绑定或在仪表盘中创建后再运行
