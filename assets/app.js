@@ -9,23 +9,32 @@ function formatTime(ts) {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-async function loadImages(sort = "latest") {
-  const res = await fetch(`/api/images?sort=${encodeURIComponent(sort)}`);
+let nextCursor = "";
+let loadingMore = false;
+
+async function loadImages(sort = "latest", reset = true) {
+  const url = new URL(`/api/images`, window.location.origin);
+  url.searchParams.set("sort", sort);
+  url.searchParams.set("limit", "20");
+  if (!reset && nextCursor) url.searchParams.set("cursor", nextCursor);
+  const res = await fetch(url.pathname + url.search);
   if (!res.ok) {
     el("#gallery").innerHTML = `<div class="status">加载图片失败</div>`;
     return;
   }
   const items = await res.json();
-  renderGallery(items);
+  const nc = res.headers.get("X-Next-Cursor") || "";
+  nextCursor = nc;
+  renderGallery(items, reset);
 }
 
-function renderGallery(items) {
+function renderGallery(items, reset = true) {
   const liked = JSON.parse(localStorage.getItem("liked_ids") || "[]");
-  el("#gallery").innerHTML = items.map(item => {
+  const html = items.map(item => {
     const isLiked = liked.includes(item.id);
     return `
       <article class="card" data-id="${item.id}">
-        <img src="/api/i/${item.id}" alt="image" loading="lazy">
+        <img src="/api/i/${item.id}?w=640&q=75" alt="image" loading="lazy">
         <div class="meta">
           <span class="time">${formatTime(item.ts)}</span>
           <div class="actions">
@@ -35,6 +44,11 @@ function renderGallery(items) {
         </div>
       </article>`;
   }).join("");
+  if (reset) {
+    el("#gallery").innerHTML = html;
+  } else {
+    el("#gallery").insertAdjacentHTML("beforeend", html);
+  }
 }
 
 function setActiveTab(sort) {
@@ -68,7 +82,8 @@ function bindEvents() {
     btn.addEventListener("click", () => {
       const sort = btn.dataset.sort;
       setActiveTab(sort);
-      loadImages(sort);
+      nextCursor = "";
+      loadImages(sort, true);
     });
   });
   const lb = el("#lightbox");
@@ -76,7 +91,8 @@ function bindEvents() {
   el("#gallery").addEventListener("click", (ev) => {
     const img = ev.target.closest(".card img");
     if (img) {
-      lbImg.src = img.src;
+      const id = img.closest(".card")?.dataset.id;
+      lbImg.src = id ? `/api/i/${id}` : img.src;
       lb.classList.remove("hidden");
       return;
     }
@@ -118,6 +134,21 @@ function bindEvents() {
       }
     } catch {}
   })();
+  const sentinel = el("#sentinel");
+  const io = new IntersectionObserver(async (entries) => {
+    const active = document.querySelector(".tab-btn.active")?.dataset.sort || "hot";
+    for (const entry of entries) {
+      if (entry.isIntersecting && nextCursor && !loadingMore) {
+        loadingMore = true;
+        try {
+          await loadImages(active, false);
+        } finally {
+          loadingMore = false;
+        }
+      }
+    }
+  });
+  io.observe(sentinel);
   const showPreview = (file) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -217,9 +248,10 @@ function bindEvents() {
 }
 
 function init() {
-  setActiveTab("latest");
+  setActiveTab("hot");
   bindEvents();
-  loadImages("latest");
+  nextCursor = "";
+  loadImages("hot", true);
 }
 
 document.addEventListener("DOMContentLoaded", init);

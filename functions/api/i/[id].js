@@ -3,6 +3,13 @@ export async function onRequestGet({ request, env, params }) {
   if (!id) {
     return new Response("bad request", { status: 400 });
   }
+  const u = new URL(request.url);
+  const wParam = u.searchParams.get("w");
+  const hParam = u.searchParams.get("h");
+  const qParam = u.searchParams.get("q");
+  const w = wParam ? Math.max(64, Math.min(2048, parseInt(wParam, 10) || 0)) : null;
+  const h = hParam ? Math.max(64, Math.min(2048, parseInt(hParam, 10) || 0)) : null;
+  const q = qParam ? Math.max(40, Math.min(90, parseInt(qParam, 10) || 0)) : 75;
   let url = "";
   if (env?.db) {
     const row = await env.db.prepare("SELECT url FROM images WHERE id = ?").bind(id).first();
@@ -31,7 +38,11 @@ export async function onRequestGet({ request, env, params }) {
     const orig = new URL(url);
     const target = `${h}${orig.pathname}`;
     try {
-      const r = await fetch(target, { cf: { cacheTtl: 86400, cacheEverything: true } });
+      const cf = { cacheTtl: 86400, cacheEverything: true };
+      if (w || h) {
+        cf.image = { width: w || undefined, height: h || undefined, fit: "cover", quality: q };
+      }
+      const r = await fetch(target, { cf });
       if (r.ok) {
         res = r;
         break;

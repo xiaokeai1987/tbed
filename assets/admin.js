@@ -24,7 +24,7 @@ async function loadSettings() {
 function render(items) {
   el("#adminList").innerHTML = items.map(x => `
     <div class="item" data-id="${x.id}">
-      <img src="/api/i/${x.id}" alt="image">
+      <img src="/api/i/${x.id}?w=480&q=75" alt="image">
       <div class="meta">
         <span>${formatTime(x.ts)} · ❤️ <input class="like-input" type="number" min="0" value="${x.likes}" style="width:80px" /> <button class="btn save-like" data-id="${x.id}">保存点赞</button></span>
         <div class="actions">
