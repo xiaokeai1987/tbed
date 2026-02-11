@@ -1,7 +1,7 @@
 # 部署指南（Cloudflare Pages）
 
 ## 必要配置
-- Functions 目录：`functions/`（无需构建命令）
+- Functions 目录：`/functions`（无需构建命令）
 - Bindings
   - KV Namespace：Binding 名 `kv`
   - D1 Database：Binding 名 `db`
