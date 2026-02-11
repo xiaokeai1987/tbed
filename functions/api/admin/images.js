@@ -6,7 +6,14 @@ export async function onRequestGet({ request, env }) {
   }
   if (env?.db) {
     let { results } = await env.db.prepare("SELECT id, url, ts, likes FROM images ORDER BY ts DESC").all();
-    results = (results || []).map(r => ({ ...r, url: `/api/i/${r.id}` }));
+    const mapExt = (u) => {
+      try {
+        const p = new URL(u).pathname.split("/").pop() || "";
+        const e = p.includes(".") ? p.split(".").pop().toLowerCase() : "";
+        return ["jpg", "jpeg", "png", "webp", "gif"].includes(e) ? (e === "jpeg" ? "jpg" : e) : "jpg";
+      } catch { return "jpg"; }
+    };
+    results = (results || []).map(r => ({ ...r, url: `/api/i/${r.id}`, ext: mapExt(r.url || "") }));
     if (env?.kv && results.length) {
       const metas = await Promise.all(results.map(r => env.kv.get(`image_meta:${r.id}`).then(v => (v ? JSON.parse(v) : null)).catch(() => null)));
       results = results.map((r, i) => ({ ...r, ip: metas[i]?.ip || "" }));
@@ -20,7 +27,15 @@ export async function onRequestGet({ request, env }) {
     const items = records
       .filter(Boolean)
       .sort((a, b) => b.ts - a.ts)
-      .map(r => ({ ...r, url: `/api/i/${r.id}` }));
+      .map(r => {
+        let ext = "jpg";
+        try {
+          const p = new URL(r.url || "").pathname.split("/").pop() || "";
+          const e = p.includes(".") ? p.split(".").pop().toLowerCase() : "";
+          ext = ["jpg", "jpeg", "png", "webp", "gif"].includes(e) ? (e === "jpeg" ? "jpg" : e) : "jpg";
+        } catch {}
+        return { ...r, url: `/api/i/${r.id}`, ext };
+      });
     const filled = await Promise.all(items.map(async r => {
       if (!r.ip) {
         const m = await env.kv.get(`image_meta:${r.id}`);

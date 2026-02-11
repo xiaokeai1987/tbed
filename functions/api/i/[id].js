@@ -1,5 +1,6 @@
 export async function onRequestGet({ request, env, params }) {
-  const id = params?.id;
+  const rawId = params?.id;
+  const id = rawId ? String(rawId).replace(/\.[a-z0-9]+$/i, "") : "";
   if (!id) {
     return new Response("bad request", { status: 400 });
   }

@@ -69,8 +69,8 @@ function renderGallery(items, reset = true) {
         <div class="meta">
           <span class="time">${formatTime(item.ts)}</span>
           <div class="actions">
-            <a class="download" href="${addCb(`/api/i/${item.id}`)}" download="img-${item.id}.jpg">下载</a>
-            <button class="share" data-id="${item.id}">分享</button>
+            <a class="download" href="${addCb(`/api/i/${item.id}.${item.ext || "jpg"}`)}" download="img-${item.id}.${item.ext || "jpg"}">下载</a>
+            <button class="share" data-id="${item.id}" data-ext="${item.ext || "jpg"}">分享</button>
             <button class="like ${isLiked ? "liked" : ""}" data-id="${item.id}">❤️ <span class="count">${item.likes}</span></button>
           </div>
         </div>
@@ -137,7 +137,8 @@ function bindEvents() {
     const shareBtn = ev.target.closest(".share");
     if (shareBtn) {
       const id = shareBtn.dataset.id;
-      const link = window.location.origin + addCb(`/api/i/${id}`);
+      const ext = shareBtn.dataset.ext || "jpg";
+      const link = window.location.origin + addCb(`/api/i/${id}.${ext}`);
       const text = shareBtn.textContent;
       shareBtn.disabled = true;
       Promise.resolve().then(async () => {

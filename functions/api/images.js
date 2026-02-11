@@ -21,7 +21,17 @@ export async function onRequestGet({ request, env }) {
         .prepare(`SELECT id, url, ts, likes FROM images ORDER BY ${order} LIMIT ? OFFSET ?`)
         .bind(limit, offset)
         .all();
-      results = (results || []).map(r => ({ ...r, url: `/api/i/${r.id}` }));
+      const mapExt = (u) => {
+        try {
+          const p = new URL(u).pathname.split("/").pop() || "";
+          const e = p.includes(".") ? p.split(".").pop().toLowerCase() : "";
+          return ["jpg", "jpeg", "png", "webp", "gif"].includes(e) ? (e === "jpeg" ? "jpg" : e) : "jpg";
+        } catch { return "jpg"; }
+      };
+      results = (results || []).map(r => {
+        const ext = mapExt(r.url || "");
+        return { ...r, url: `/api/i/${r.id}`, ext };
+      });
       const next = results.length === limit ? `d1:${offset + results.length}` : "";
       const headers = new Headers({ "Content-Type": "application/json", "Cache-Control": "public, max-age=60" });
       if (next) headers.set("X-Next-Cursor", next);
@@ -41,7 +51,17 @@ export async function onRequestGet({ request, env }) {
       const records = await Promise.all(
         keys.map(k => env.kv.get(k.name).then(v => (v ? JSON.parse(v) : null)))
       );
-      const items = records.filter(Boolean).map(r => ({ ...r, url: `/api/i/${r.id}` }));
+      const mapExt = (u) => {
+        try {
+          const p = new URL(u).pathname.split("/").pop() || "";
+          const e = p.includes(".") ? p.split(".").pop().toLowerCase() : "";
+          return ["jpg", "jpeg", "png", "webp", "gif"].includes(e) ? (e === "jpeg" ? "jpg" : e) : "jpg";
+        } catch { return "jpg"; }
+      };
+      const items = records.filter(Boolean).map(r => {
+        const ext = mapExt(r.url || "");
+        return { ...r, url: `/api/i/${r.id}`, ext };
+      });
 
     if (sort === "hot") {
       items.sort((a, b) => {
