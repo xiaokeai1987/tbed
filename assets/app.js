@@ -70,6 +70,7 @@ function renderGallery(items, reset = true) {
           <span class="time">${formatTime(item.ts)}</span>
           <div class="actions">
             <a class="download" href="${addCb(`/api/i/${item.id}`)}" download="img-${item.id}.jpg">下载</a>
+            <button class="share" data-id="${item.id}">分享</button>
             <button class="like ${isLiked ? "liked" : ""}" data-id="${item.id}">❤️ <span class="count">${item.likes}</span></button>
           </div>
         </div>
@@ -132,6 +133,32 @@ function bindEvents() {
     if (btn) {
       const id = btn.dataset.id;
       like(id, btn);
+    }
+    const shareBtn = ev.target.closest(".share");
+    if (shareBtn) {
+      const id = shareBtn.dataset.id;
+      const link = window.location.origin + addCb(`/api/i/${id}`);
+      const text = shareBtn.textContent;
+      shareBtn.disabled = true;
+      Promise.resolve().then(async () => {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(link);
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = link;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          }
+          shareBtn.textContent = "已复制";
+          setTimeout(() => { shareBtn.textContent = text; }, 1500);
+        } finally {
+          shareBtn.disabled = false;
+        }
+      });
+      return;
     }
   });
   lb.addEventListener("click", () => {

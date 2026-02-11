@@ -123,7 +123,8 @@ export async function onRequestPost({ request, env }) {
 
     const id = crypto.randomUUID();
     const ts = Date.now();
-    const record = { id, url, ts, likes: 0 };
+    const ip = String((request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "")).split(",")[0].trim();
+    const record = { id, url, ts, likes: 0, ip };
     if (env?.db) {
       await env.db
         .prepare("INSERT INTO images (id, url, ts, likes) VALUES (?, ?, ?, ?)")
@@ -132,6 +133,7 @@ export async function onRequestPost({ request, env }) {
     }
     if (env?.kv) {
       await env.kv.put(`image:${id}`, JSON.stringify(record));
+      await env.kv.put(`image_meta:${id}`, JSON.stringify({ ip }));
     }
 
     if (env.TGBOT && env.TGGROUP) {
