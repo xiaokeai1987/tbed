@@ -73,11 +73,17 @@ async function resetAdminPagination() {
 function updateAdminPagerUI() {
   const info = el("#adminPageInfo");
   if (info) info.textContent = `第 ${adminPageIndex + 1} 页`;
+  const infoB = el("#adminPageInfoBottom");
+  if (infoB) infoB.textContent = `第 ${adminPageIndex + 1} 页`;
   const prev = el("#adminPrev");
   const next = el("#adminNext");
   if (prev) prev.disabled = adminPageIndex <= 0;
   const hasNext = !!adminCursors[adminPageIndex];
   if (next) next.disabled = !hasNext;
+  const prevB = el("#adminPrevBottom");
+  const nextB = el("#adminNextBottom");
+  if (prevB) prevB.disabled = adminPageIndex <= 0;
+  if (nextB) nextB.disabled = !hasNext;
   const pn = el("#adminPageNumbers");
   if (pn) {
     let html = adminPages.map((_, i) => `<button class="page-num${i === adminPageIndex ? " active" : ""}" data-idx="${i}">${i + 1}</button>`).join("");
@@ -86,6 +92,10 @@ function updateAdminPagerUI() {
       html += `<button class="page-num" data-idx="${adminPages.length}">${nextNum}</button>`;
     }
     pn.innerHTML = html;
+  }
+  const pnB = el("#adminPageNumbersBottom");
+  if (pnB) {
+    pnB.innerHTML = (el("#adminPageNumbers")?.innerHTML) || "";
   }
 }
 
@@ -252,6 +262,26 @@ function bind() {
   const pn = el("#adminPageNumbers");
   if (pn) {
     pn.addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".page-num[data-idx]");
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.idx, 10);
+      if (!Number.isFinite(idx) || idx < 0) return;
+      if (adminPages[idx]) {
+        adminPageIndex = idx;
+        render(adminPages[adminPageIndex]);
+        updateAdminPagerUI();
+        return;
+      }
+      adminNextPage();
+    });
+  }
+  const prevBtnB = el("#adminPrevBottom");
+  const nextBtnB = el("#adminNextBottom");
+  if (prevBtnB) prevBtnB.addEventListener("click", () => adminPrevPage());
+  if (nextBtnB) nextBtnB.addEventListener("click", () => adminNextPage());
+  const pnB = el("#adminPageNumbersBottom");
+  if (pnB) {
+    pnB.addEventListener("click", (ev) => {
       const btn = ev.target.closest(".page-num[data-idx]");
       if (!btn) return;
       const idx = parseInt(btn.dataset.idx, 10);

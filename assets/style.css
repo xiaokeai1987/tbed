@@ -20,10 +20,30 @@ html, body {
 .header {
   padding: 24px 16px;
   border-bottom: 1px solid var(--border);
+  position: relative;
 }
 .header h1 { margin: 0 0 6px; font-size: 22px; }
 .header p { margin: 0; color: var(--muted); }
 .site-count { margin-top: 6px; color: var(--muted); }
+.gh-link {
+  position: absolute;
+  right: 16px;
+  top: 20px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  text-decoration: none;
+}
+.gh-link:hover { color: var(--accent); border-color: var(--accent); }
+@media (max-width: 640px) {
+  .gh-link { display: none; }
+}
 
 .upload { padding: 20px 16px; border-bottom: 1px solid var(--border); }
 .upload-card {
@@ -144,6 +164,12 @@ html, body {
     gap: 10px;
   }
   #pageInfoBottom {
+    grid-column: 2;
+    text-align: center;
+    margin: 2px 0;
+    font-size: 14px;
+  }
+  #adminPageInfoBottom {
     grid-column: 2;
     text-align: center;
     margin: 2px 0;
