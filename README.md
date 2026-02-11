@@ -1,3 +1,30 @@
+# 项目简介
+
+一个基于 Cloudflare Pages/Functions 构建的在线共享图片站（tbed）。支持图片上传、主页展示与分享、点赞统计、热门/最新分类、分页浏览，以及带密码的管理员后台（删除、修改点赞、开关上传与过滤、选择过滤账号）。
+
+## 特性
+- 图片上传（JPG/PNG ≤ 5MB），失败信息友好
+- 首页“热门/最新”切换；分页：移动端每页 10 张、桌面端每页 21 张
+- 复制分享链接（包含正确文件后缀），支持下载
+- 懒加载缩略图与边缘代理 `/api/i/:id`，加速加载
+- 点赞计数，前端本地去重
+- 管理后台：分页、删除、保存点赞、允许上传开关、开启图片过滤开关
+- 图片过滤（Sightengine）：支持多个账号，后台下拉切换；开启过滤时“先审核再写库与推送”，不合规返回 415
+- 多图床策略：Telegraph（三域）优先，失败回退 Telegram 直链（过滤通过后执行）
+- SEO：已添加 robots.txt 与首页 meta（description/keywords/OG）
+- 后台显示上传者 IP，并支持点击复制
+
+## 技术栈
+- Cloudflare Pages + Functions
+- Cloudflare KV（元信息与设置）/ D1（图片索引与点赞）
+- Telegram Bot（回退图床与推送）/ Sightengine（图片审核）
+
+## 快速开始
+- 本地开发：`npm i` → `npm run dev`，本地环境变量写入 `.dev.vars`（`PASSWORD`、可选 `TGBOT`、`TGGROUP`）
+- 初始化 D1：进入数据库执行 `d1/schema.sql`
+- 绑定：在 Pages 仪表盘添加 Bindings（KV=kv，D1=db），并配置环境变量
+- 验证：访问 `/api/env?test=1`、`/api/count`；进入 `/admin` 进行基础操作
+
 # 部署指南（Cloudflare Pages）
 
 ## 必要配置
