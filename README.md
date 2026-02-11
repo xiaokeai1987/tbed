@@ -21,7 +21,7 @@
 
 ## 快速开始
 - 本地开发：`npm i` → `npm run dev`，本地环境变量写入 `.dev.vars`（`PASSWORD`、可选 `TGBOT`、`TGGROUP`）
-- 初始化 D1：进入数据库执行 `d1/schema.sql`
+- 初始化 D1：进入数据库执行 [d1/schema.sql](https://github.com/tud8951/tbed/blob/main/d1/schema.sql)
 - 绑定：在 Pages 仪表盘添加 Bindings（KV=kv，D1=db），并配置环境变量
 - 验证：访问 `/api/env?test=1`、`/api/count`；进入 `/admin` 进行基础操作
 
