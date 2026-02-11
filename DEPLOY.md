@@ -63,7 +63,6 @@
 - 可选环境变量（启用图片过滤时）
   - `SIGHTENGINE_USER`：Sightengine api_user
   - `SIGHTENGINE_KEY`：Sightengine api_secret
-  - `IMGSH`：自定义审核服务基础地址（作为 Sightengine 的回退）
 
 ## 本地调试
 - 安装依赖：`npm i`

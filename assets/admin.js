@@ -65,6 +65,9 @@ function bind() {
       await loadSettings();
       await load();
       el("#loginStatus").textContent = "";
+      try { localStorage.setItem("admin_token", token); } catch {}
+      const box = document.querySelector(".login");
+      if (box) box.classList.add("hidden");
       el("#adminPanel").classList.remove("hidden");
     } catch (e) {
       const msg = String(e?.message || "");
@@ -162,6 +165,25 @@ function bind() {
 }
 
 function init() {
+  const saved = (() => {
+    try { return localStorage.getItem("admin_token") || ""; } catch { return ""; }
+  })();
+  if (saved) {
+    token = saved;
+    (async () => {
+      try {
+        await loadSettings();
+        await load();
+        el("#loginStatus").textContent = "";
+        const box = document.querySelector(".login");
+        if (box) box.classList.add("hidden");
+        el("#adminPanel").classList.remove("hidden");
+      } catch {
+        try { localStorage.removeItem("admin_token"); } catch {}
+        token = "";
+      }
+    })();
+  }
   bind();
 }
 

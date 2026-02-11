@@ -115,32 +115,6 @@ export async function onRequestPost({ request, env }) {
             }
           }
         } catch {}
-      } else if (env?.IMGSH) {
-        const base = String(env.IMGSH).replace(/\/+$/, "");
-        const targets = [];
-        try {
-          const host = new URL(base).host;
-          if (/moderatecontent\.com$/.test(host)) {
-            targets.push(`https://api.moderatecontent.com/moderate/?url=${encodeURIComponent(url)}`);
-          }
-        } catch {}
-        targets.push(`${base}/moderate?url=${encodeURIComponent(url)}`);
-        targets.push(`${base}/api/moderate?url=${encodeURIComponent(url)}`);
-        for (const t of targets) {
-          try {
-            const r = await fetch(t, { headers: { "Accept": "application/json" } });
-            if (!r.ok) continue;
-            const j = await r.json().catch(() => null);
-            if (!j) continue;
-            const ri = Number(j.rating_index);
-            const rating = String(j.rating || "").toLowerCase();
-            const pred = String(j.prediction || j.class || "").toLowerCase();
-            const blocked = (Number.isFinite(ri) && ri >= 3) || rating === "adult" || pred === "adult";
-            ok = !blocked;
-            detail = JSON.stringify({ rating_index: j.rating_index, rating: j.rating, prediction: j.prediction });
-            break;
-          } catch {}
-        }
       }
       if (!ok) {
         return new Response(JSON.stringify({ error: "图片不符合社区规范", detail }), { status: 415, headers: { "Content-Type": "application/json" } });
