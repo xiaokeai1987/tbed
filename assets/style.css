@@ -117,6 +117,7 @@ html, body {
 .pager { padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .pager-bar { display: flex; align-items: center; gap: 8px; }
 .page-numbers { padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+.pager.bottom-only { display: none; }
 .page-num {
   display: inline-flex;
   align-items: center;
@@ -134,6 +135,8 @@ html, body {
 }
 
 @media (max-width: 640px) {
+  .pager.bottom-only { display: block; border-top: 1px solid var(--border); }
+  .pager:not(.bottom-only) { display: none; }
   .pager-bar {
     display: grid;
     grid-template-columns: 1fr 1fr;

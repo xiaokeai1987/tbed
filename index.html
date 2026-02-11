@@ -46,15 +46,24 @@
     </section>
     <section class="pager">
       <div class="pager-bar">
-        <button id="prevPage" class="btn">上一页</button>
+        <button id="prevPage" class="btn primary">上一页</button>
         <span id="pageInfo" class="status">第 1 页</span>
-        <button id="nextPage" class="btn">下一页</button>
+        <button id="nextPage" class="btn primary">下一页</button>
       </div>
       <div id="pageNumbers" class="page-numbers"></div>
     </section>
 
     <main id="gallery" class="gallery"></main>
     <div id="sentinel" style="height:1px; display:none;"></div>
+
+    <section class="pager bottom-only">
+      <div class="pager-bar">
+        <button id="prevPageBottom" class="btn primary">上一页</button>
+        <span id="pageInfoBottom" class="status">第 1 页</span>
+        <button id="nextPageBottom" class="btn primary">下一页</button>
+      </div>
+      <div id="pageNumbersBottom" class="page-numbers"></div>
+    </section>
     <div id="lightbox" class="lightbox hidden"><img id="lightboxImg" alt="image"></div>
 
     <script src="assets/app.js"></script>

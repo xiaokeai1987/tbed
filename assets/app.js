@@ -14,6 +14,9 @@ let pages = [];
 let cursors = [];
 let pageIndex = 0;
 let pageSize = 20;
+let totalCount = 0;
+let totalPages = 0;
+let d1Bound = false;
 const cacheBust = (() => {
   const m = (location.search || "").match(/[?&]cb=([^&]+)/);
   return m ? decodeURIComponent(m[1]) : "";
@@ -53,19 +56,36 @@ function computePageSize() {
 function updatePagerUI() {
   const info = el("#pageInfo");
   if (info) info.textContent = `第 ${pageIndex + 1} 页`;
+  const infoB = el("#pageInfoBottom");
+  if (infoB) infoB.textContent = `第 ${pageIndex + 1} 页`;
   const prev = el("#prevPage");
   const next = el("#nextPage");
   if (prev) prev.disabled = pageIndex <= 0;
-  const hasNext = !!cursors[pageIndex];
+  const hasNext = totalPages > 0 ? (pageIndex + 1 < totalPages) : !!cursors[pageIndex];
   if (next) next.disabled = !hasNext;
+  const prevB = el("#prevPageBottom");
+  const nextB = el("#nextPageBottom");
+  if (prevB) prevB.disabled = pageIndex <= 0;
+  if (nextB) nextB.disabled = !hasNext;
   const pn = el("#pageNumbers");
   if (pn) {
-    let html = pages.map((_, i) => `<button class="page-num${i === pageIndex ? " active" : ""}" data-idx="${i}">${i + 1}</button>`).join("");
-    if (hasNext) {
-      const nextNum = pages.length + 1;
-      html += `<button class="page-num" data-idx="${pages.length}">${nextNum}</button>`;
+    let html = "";
+    if (totalPages > 0) {
+      for (let i = 0; i < totalPages; i++) {
+        html += `<button class="page-num${i === pageIndex ? " active" : ""}" data-idx="${i}">${i + 1}</button>`;
+      }
+    } else {
+      html = pages.map((_, i) => `<button class="page-num${i === pageIndex ? " active" : ""}" data-idx="${i}">${i + 1}</button>`).join("");
+      if (hasNext) {
+        const nextNum = pages.length + 1;
+        html += `<button class="page-num" data-idx="${pages.length}">${nextNum}</button>`;
+      }
     }
     pn.innerHTML = html;
+  }
+  const pnB = el("#pageNumbersBottom");
+  if (pnB) {
+    pnB.innerHTML = (el("#pageNumbers")?.innerHTML) || "";
   }
 }
 async function fetchPage(sort, cursorToken) {
@@ -86,6 +106,7 @@ async function resetPagination(sort) {
   cursors = [];
   pageIndex = 0;
   pageSize = computePageSize();
+  totalPages = totalCount > 0 ? Math.ceil(totalCount / pageSize) : 0;
   try {
     const { items, nextCursor: nc } = await fetchPage(sort, "");
     pages.push(items);
@@ -280,7 +301,59 @@ function bindEvents() {
         return;
       }
       const active = document.querySelector(".tab-btn.active")?.dataset.sort || "hot";
-      goNext(active);
+      if (d1Bound && totalPages > 0) {
+        const offsetToken = `d1:${idx * pageSize}`;
+        Promise.resolve().then(async () => {
+          try {
+            const { items, nextCursor: nc } = await fetchPage(active, offsetToken);
+            pages[idx] = items;
+            cursors[idx] = nc;
+            pageIndex = idx;
+            renderGallery(items, true);
+          } catch {}
+          updatePagerUI();
+        });
+      } else {
+        goNext(active);
+      }
+    });
+  }
+  const prevBtnB = el("#prevPageBottom");
+  const nextBtnB = el("#nextPageBottom");
+  if (prevBtnB) prevBtnB.addEventListener("click", () => goPrev());
+  if (nextBtnB) nextBtnB.addEventListener("click", () => {
+    const active = document.querySelector(".tab-btn.active")?.dataset.sort || "hot";
+    goNext(active);
+  });
+  const pageNumbersB = el("#pageNumbersBottom");
+  if (pageNumbersB) {
+    pageNumbersB.addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".page-num[data-idx]");
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.idx, 10);
+      if (!Number.isFinite(idx) || idx < 0) return;
+      if (pages[idx]) {
+        pageIndex = idx;
+        renderGallery(pages[pageIndex], true);
+        updatePagerUI();
+        return;
+      }
+      const active = document.querySelector(".tab-btn.active")?.dataset.sort || "hot";
+      if (d1Bound && totalPages > 0) {
+        const offsetToken = `d1:${idx * pageSize}`;
+        Promise.resolve().then(async () => {
+          try {
+            const { items, nextCursor: nc } = await fetchPage(active, offsetToken);
+            pages[idx] = items;
+            cursors[idx] = nc;
+            pageIndex = idx;
+            renderGallery(items, true);
+          } catch {}
+          updatePagerUI();
+        });
+      } else {
+        goNext(active);
+      }
     });
   }
 
@@ -389,11 +462,19 @@ function init() {
   resetPagination("hot");
   (async () => {
     try {
+      const e = await fetch("/api/env?test=1");
+      if (e.ok) {
+        const ej = await e.json();
+        d1Bound = !!ej?.d1_bound;
+      }
       const r = await fetch("/api/count");
       if (r.ok) {
         const j = await r.json();
+        totalCount = Number(j?.count || 0);
         const sc = el("#siteCount");
-        if (sc) sc.textContent = `已存储 ${Number(j?.count || 0)} 张图片`;
+        if (sc) sc.textContent = `已存储 ${totalCount} 张图片`;
+        totalPages = totalCount > 0 ? Math.ceil(totalCount / computePageSize()) : 0;
+        updatePagerUI();
       }
     } catch {}
   })();

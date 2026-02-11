@@ -38,7 +38,7 @@ function render(items) {
     <div class="item" data-id="${x.id}">
       <img src="/api/i/${x.id}?w=480&q=75" alt="image">
       <div class="meta">
-        <span><button class="btn ip-toggle" data-ip="${x.ip || ""}" title="点击切换为IP">定位中...</button> · ${formatTime(x.ts)} · ❤️ <input class="like-input" type="number" min="0" value="${x.likes}" style="width:80px" /> <button class="btn save-like" data-id="${x.id}">保存点赞</button></span>
+        <span>${x.ip || "-"} · ${formatTime(x.ts)} · ❤️ <input class="like-input" type="number" min="0" value="${x.likes}" style="width:80px" /> <button class="btn save-like" data-id="${x.id}">保存点赞</button></span>
         <div class="actions">
           <a class="download" href="/api/i/${x.id}" download="img-${x.id}.jpg">下载</a>
           <button class="btn danger" data-id="${x.id}">删除</button>
@@ -59,26 +59,6 @@ async function fetchAdminPage(cursorToken = "") {
   return { items, nextCursor: nc };
 }
 
-async function resolveLocations() {
-  const btns = els(".ip-toggle");
-  for (const b of btns) {
-    const ip = b.dataset.ip || "";
-    if (!ip) {
-      b.textContent = "-";
-      b.disabled = true;
-      continue;
-    }
-    try {
-      const j = await fetchJSON(`/api/admin/geo?ip=${encodeURIComponent(ip)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      b.textContent = j?.location || ip;
-    } catch {
-      b.textContent = ip;
-    }
-  }
-}
-
 async function resetAdminPagination() {
   adminPages = [];
   adminCursors = [];
@@ -87,7 +67,6 @@ async function resetAdminPagination() {
   adminPages.push(items);
   adminCursors.push(nextCursor);
   render(items);
-  await resolveLocations();
   updateAdminPagerUI();
 }
 
@@ -117,7 +96,6 @@ async function adminNextPage() {
   if (adminPages[adminPageIndex + 1]) {
     adminPageIndex += 1;
     render(adminPages[adminPageIndex]);
-    await resolveLocations();
     updateAdminPagerUI();
     return;
   }
@@ -126,7 +104,6 @@ async function adminNextPage() {
   adminCursors.push(nextCursor);
   adminPageIndex += 1;
   render(items);
-  await resolveLocations();
   updateAdminPagerUI();
 }
 
@@ -230,24 +207,6 @@ function bind() {
     if (img) {
       lbImg.src = img.src;
       lb.classList.remove("hidden");
-      return;
-    }
-    const ipBtn = ev.target.closest(".ip-toggle");
-    if (ipBtn) {
-      const ip = ipBtn.dataset.ip || "";
-      const showingIp = ipBtn.textContent === ip;
-      if (showingIp) {
-        try {
-          const j = await fetchJSON(`/api/admin/geo?ip=${encodeURIComponent(ip)}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          ipBtn.textContent = j?.location || ip;
-        } catch {
-          ipBtn.textContent = ip;
-        }
-      } else {
-        ipBtn.textContent = ip;
-      }
       return;
     }
     const btn = ev.target.closest("button[data-id]");
