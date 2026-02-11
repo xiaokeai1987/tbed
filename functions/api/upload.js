@@ -1,5 +1,15 @@
 export async function onRequestPost({ request, env }) {
   try {
+    let allow = true;
+    if (env?.kv) {
+      const v = await env.kv.get("settings:allow_upload");
+      if (v !== null && v !== undefined) {
+        allow = v === "1" || v === "true";
+      }
+    }
+    if (!allow) {
+      return new Response(JSON.stringify({ error: "已关闭上传" }), { status: 403, headers: { "Content-Type": "application/json" } });
+    }
     const form = await request.formData();
     const file = form.get("file");
     if (!file) {

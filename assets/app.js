@@ -1,6 +1,7 @@
 const el = (sel) => document.querySelector(sel);
 const els = (sel) => Array.from(document.querySelectorAll(sel));
 let selectedFile = null;
+let allowUpload = true;
 
 function formatTime(ts) {
   const d = new Date(ts);
@@ -97,6 +98,26 @@ function bindEvents() {
   const previewName = el("#previewName");
   const previewSize = el("#previewSize");
   const status = el("#uploadStatus");
+  const applyUploadEnabled = (enabled) => {
+    allowUpload = !!enabled;
+    chooseBtn.disabled = !enabled;
+    el("#uploadBtn").disabled = !enabled;
+    dz.style.pointerEvents = enabled ? "auto" : "none";
+    if (!enabled) {
+      status.textContent = "上传已关闭";
+    } else {
+      if (status.textContent === "上传已关闭") status.textContent = "";
+    }
+  };
+  (async () => {
+    try {
+      const r = await fetch("/api/settings");
+      if (r.ok) {
+        const s = await r.json();
+        applyUploadEnabled(!!s?.allow_upload);
+      }
+    } catch {}
+  })();
   const showPreview = (file) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -116,6 +137,10 @@ function bindEvents() {
   dz.addEventListener("drop", (e) => {
     e.preventDefault();
     dz.classList.remove("dragover");
+    if (!allowUpload) {
+      status.textContent = "上传已关闭";
+      return;
+    }
     const f = e.dataTransfer.files?.[0];
     if (!f) return;
     if (!["image/jpeg", "image/png"].includes(f.type)) {
@@ -130,6 +155,10 @@ function bindEvents() {
     showPreview(f);
   });
   input.addEventListener("change", () => {
+    if (!allowUpload) {
+      status.textContent = "上传已关闭";
+      return;
+    }
     const f = input.files?.[0];
     if (!f) return;
     if (!["image/jpeg", "image/png"].includes(f.type)) {
@@ -144,6 +173,10 @@ function bindEvents() {
     showPreview(f);
   });
   el("#uploadBtn").addEventListener("click", async () => {
+    if (!allowUpload) {
+      status.textContent = "上传已关闭";
+      return;
+    }
     const file = selectedFile || el("#fileInput").files?.[0];
     if (!file) {
       status.textContent = "请选择图片文件";

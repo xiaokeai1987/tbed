@@ -14,12 +14,19 @@ async function fetchJSON(url, opts = {}) {
   return res.json();
 }
 
+async function loadSettings() {
+  const s = await fetchJSON("/api/admin/settings", {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  el("#allowUpload").checked = !!s?.allow_upload;
+}
+
 function render(items) {
   el("#adminList").innerHTML = items.map(x => `
     <div class="item" data-id="${x.id}">
       <img src="/api/i/${x.id}" alt="image">
       <div class="meta">
-        <span>${formatTime(x.ts)} · ❤️ ${x.likes}</span>
+        <span>${formatTime(x.ts)} · ❤️ <input class="like-input" type="number" min="0" value="${x.likes}" style="width:80px" /> <button class="btn save-like" data-id="${x.id}">保存点赞</button></span>
         <div class="actions">
           <a class="download" href="/api/i/${x.id}" download="img-${x.id}.jpg">下载</a>
           <button class="btn danger" data-id="${x.id}">删除</button>
@@ -54,6 +61,7 @@ function bind() {
     token = pwd;
     el("#loginStatus").textContent = "正在验证...";
     try {
+      await loadSettings();
       await load();
       el("#loginStatus").textContent = "";
       el("#adminPanel").classList.remove("hidden");
@@ -63,6 +71,24 @@ function bind() {
         ? "密码错误"
         : "服务不可用";
       token = "";
+    }
+  });
+  el("#allowUpload").addEventListener("change", async (ev) => {
+    const checked = ev.target.checked;
+    const st = el("#settingsStatus");
+    st.textContent = "保存中...";
+    try {
+      await fetchJSON("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ op: "toggle_upload", allow_upload: checked })
+      });
+      st.textContent = "已保存";
+    } catch {
+      st.textContent = "保存失败";
+      ev.target.checked = !checked;
+    } finally {
+      setTimeout(() => st.textContent = "", 2000);
     }
   });
   el("#adminList").addEventListener("click", async (ev) => {
@@ -77,13 +103,37 @@ function bind() {
     const btn = ev.target.closest("button[data-id]");
     if (!btn) return;
     const id = btn.dataset.id;
-    btn.disabled = true;
-    try {
-      await del(id);
-      const card = el(`.item[data-id="${id}"]`);
-      if (card) card.remove();
-    } finally {
-      btn.disabled = false;
+    if (btn.classList.contains("save-like")) {
+      const card = btn.closest(".item");
+      const input = card?.querySelector(".like-input");
+      const val = input ? Number(input.value) : 0;
+      const st = el("#settingsStatus");
+      btn.disabled = true;
+      st.textContent = "保存中...";
+      try {
+        await fetchJSON("/api/admin/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ op: "set_likes", id, likes: val })
+        });
+        st.textContent = "已保存";
+      } catch {
+        st.textContent = "保存失败";
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => st.textContent = "", 2000);
+      }
+      return;
+    }
+    if (btn.classList.contains("danger")) {
+      btn.disabled = true;
+      try {
+        await del(id);
+        const card = el(`.item[data-id="${id}"]`);
+        if (card) card.remove();
+      } finally {
+        btn.disabled = false;
+      }
     }
   });
   el("#lightbox").addEventListener("click", () => {
