@@ -132,6 +132,34 @@ html, body {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+@media (max-width: 640px) {
+  .pager-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  #pageInfo, #adminPageInfo {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin: 2px 0;
+    font-size: 14px;
+  }
+  .pager .btn {
+    padding: 10px 0;
+    font-size: 14px;
+    border-radius: 10px;
+    width: 100%;
+  }
+  .page-numbers {
+    justify-content: center;
+    gap: 10px;
+  }
+  .page-num {
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+}
 .tab-btn {
   background: transparent;
   border: 1px solid var(--border);
