@@ -51,6 +51,25 @@ export async function onRequestGet({ request, env, params }) {
     } catch {}
   }
   if (!res) {
+    if (env?.kv) {
+      const b64 = await env.kv.get(`image_bin:${id}`);
+      if (b64) {
+        const metaRaw = await env.kv.get(`image_bin_meta:${id}`);
+        let mime = "image/jpeg";
+        try {
+          const m = metaRaw ? JSON.parse(metaRaw) : null;
+          if (m?.mime) mime = String(m.mime);
+        } catch {}
+        const bin = (globalThis && globalThis.atob ? globalThis.atob(b64) : atob(b64));
+        const len = bin.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+        const headers = new Headers({ "Content-Type": mime, "Cache-Control": "public, max-age=604800, immutable" });
+        const out = new Response(bytes, { status: 200, headers });
+        await cache.put(request, out.clone());
+        return out;
+      }
+    }
     return new Response("upstream error", { status: 502 });
   }
   const headers = new Headers(res.headers);

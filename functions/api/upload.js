@@ -158,6 +158,19 @@ export async function onRequestPost({ request, env }) {
     if (env?.kv) {
       await env.kv.put(`image:${id}`, JSON.stringify(record));
       await env.kv.put(`image_meta:${id}`, JSON.stringify({ ip }));
+      const toBase64 = (buf) => {
+        const bytes = new Uint8Array(buf);
+        const chunk = 0x8000;
+        let binary = "";
+        for (let i = 0; i < bytes.length; i += chunk) {
+          const sub = bytes.subarray(i, i + chunk);
+          binary += String.fromCharCode.apply(null, sub);
+        }
+        return (globalThis && globalThis.btoa ? globalThis.btoa(binary) : btoa(binary));
+      };
+      const b64 = toBase64(ab);
+      await env.kv.put(`image_bin:${id}`, b64);
+      await env.kv.put(`image_bin_meta:${id}`, JSON.stringify({ mime: blob.type || "image/jpeg", size }));
     }
 
     if (env.TGBOT && env.TGGROUP && !pushed) {
